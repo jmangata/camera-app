@@ -3,10 +3,11 @@ FROM node:18-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --only=production
+COPY prisma ./prisma/
+RUN npm ci
+RUN npx prisma generate
 
 COPY . .
-RUN npx prisma generate
 RUN npm run build
 
 EXPOSE 3001
