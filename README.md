@@ -7,7 +7,7 @@ Plateforme web de cartographie des caméras publiques à Fort-de-France, Martini
 **Frontend**: React + Vite + TailwindCSS + Leaflet  
 **Backend**: Node.js + Express + PostgreSQL + Prisma  
 **Auth**: JWT avec rôles (admin/modérateur/utilisateur)  
-**Hébergement**: Optimisé pour Render.com
+**Hébergement**: Railway.app (recommandé) ou Render.com
 
 ## Démarrage Rapide
 
@@ -29,6 +29,11 @@ npm run dev
 └── scripts/         # Scripts utilitaires
 ```
 
-## Déploiement Render
+## Déploiement
 
-Voir `docs/DEPLOYMENT.md` pour le guide complet.
+| Hébergeur | Guide | Gratuit |
+|---|---|---|
+| **Railway** (recommandé) | `docs/DEPLOYMENT_RAILWAY.md` | 5$/mois crédit |
+| Render | `docs/DEPLOYMENT.md` | Oui (limité) |
+
+Railway est recommandé car il gère Prisma automatiquement sans configuration spéciale.
