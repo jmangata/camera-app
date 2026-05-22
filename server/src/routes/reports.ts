@@ -1,29 +1,21 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { authenticateToken, AuthRequest, requireRole } from '../middleware/auth';
 import { reportSchema } from '../validators/auth';
 import { prisma } from '../lib/prisma';
 
 const router = Router();
 
-router.get('/', authenticateToken, requireRole(['MODERATOR', 'ADMIN']), async (req, res) => {
+router.get('/', authenticateToken, requireRole(['MODERATOR', 'ADMIN']), async (req: Request, res: Response) => {
   try {
     const { status } = req.query;
-    
+
     const reports = await prisma.report.findMany({
-      where: {
-        ...(status && { status: status as any }),
-      },
+      where: { ...(status && { status: status as any }) },
       include: {
-        camera: {
-          include: {
-            category: true
-          }
-        },
-        user: {
-          select: { username: true, email: true }
-        }
+        camera: { include: { category: true } },
+        user: { select: { username: true, email: true } },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
 
     res.json(reports);
@@ -32,37 +24,32 @@ router.get('/', authenticateToken, requireRole(['MODERATOR', 'ADMIN']), async (r
   }
 });
 
-router.post('/', authenticateToken, async (req: AuthRequest, res) => {
+router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const data = reportSchema.parse(req.body);
-    
+
     const existingReport = await prisma.report.findFirst({
       where: {
         cameraId: data.cameraId,
         userId: req.user!.userId,
-        status: 'PENDING'
-      }
+        status: 'PENDING',
+      },
     });
 
     if (existingReport) {
-      return res.status(400).json({ error: 'Vous avez déjà signalé cette caméra' });
+      return res.status(400).json({ error: 'You already reported this camera' });
     }
-    
+
     const report = await prisma.report.create({
       data: {
-        ...data,
-        userId: req.user!.userId,
+        reason: data.reason,
+        camera: { connect: { id: data.cameraId } },
+        user: { connect: { id: req.user!.userId } },
       },
       include: {
-        camera: {
-          include: {
-            category: true
-          }
-        },
-        user: {
-          select: { username: true }
-        }
-      }
+        camera: { include: { category: true } },
+        user: { select: { username: true } },
+      },
     });
 
     res.status(201).json(report);
@@ -71,29 +58,23 @@ router.post('/', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.put('/:id/status', authenticateToken, requireRole(['MODERATOR', 'ADMIN']), async (req: AuthRequest, res) => {
+router.put('/:id/status', authenticateToken, requireRole(['MODERATOR', 'ADMIN']), async (req: AuthRequest, res: Response) => {
   try {
     const { status } = req.body;
-    
+
     const report = await prisma.report.update({
       where: { id: req.params.id },
       data: { status },
       include: {
-        camera: {
-          include: {
-            category: true
-          }
-        },
-        user: {
-          select: { username: true }
-        }
-      }
+        camera: { include: { category: true } },
+        user: { select: { username: true } },
+      },
     });
 
     if (status === 'RESOLVED') {
       await prisma.camera.update({
         where: { id: report.cameraId },
-        data: { status: 'ACTIVE' }
+        data: { status: 'ACTIVE' },
       });
     }
 

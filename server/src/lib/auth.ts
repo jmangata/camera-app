@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { prisma } from './prisma';
 
 export interface JWTPayload {
@@ -18,13 +18,12 @@ export class AuthService {
   }
 
   static generateToken(payload: JWTPayload): string {
-    return jwt.sign(payload, process.env.JWT_SECRET!, {
-      expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-    });
+    const options: SignOptions = { expiresIn: '7d' };
+    return jwt.sign(payload as object, process.env.JWT_SECRET as string, options);
   }
 
   static verifyToken(token: string): JWTPayload {
-    return jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload;
+    return jwt.verify(token, process.env.JWT_SECRET as string) as JWTPayload;
   }
 
   static async createUser(data: {
@@ -34,11 +33,13 @@ export class AuthService {
     role?: 'USER' | 'MODERATOR' | 'ADMIN';
   }) {
     const hashedPassword = await this.hashPassword(data.password);
-    
+
     return prisma.user.create({
       data: {
-        ...data,
+        email: data.email,
+        username: data.username,
         password: hashedPassword,
+        ...(data.role && { role: data.role }),
       },
       select: {
         id: true,
@@ -51,18 +52,12 @@ export class AuthService {
   }
 
   static async authenticateUser(email: string, password: string) {
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await prisma.user.findUnique({ where: { email } });
 
-    if (!user) {
-      throw new Error('Utilisateur non trouvé');
-    }
+    if (!user) throw new Error('User not found');
 
     const isValid = await this.comparePassword(password, user.password);
-    if (!isValid) {
-      throw new Error('Mot de passe incorrect');
-    }
+    if (!isValid) throw new Error('Invalid password');
 
     const token = this.generateToken({
       userId: user.id,
