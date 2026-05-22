@@ -33,7 +33,8 @@ npm run dev
 
 | Hébergeur | Guide | Gratuit |
 |---|---|---|
-| **Railway** (recommandé) | `docs/DEPLOYMENT_RAILWAY.md` | 5$/mois crédit |
+| **Fly.io** (recommandé) | `docs/DEPLOYMENT_FLY.md` | Oui (permanent) |
+| Railway | `docs/DEPLOYMENT_RAILWAY.md` | 5$/mois crédit |
 | Render | `docs/DEPLOYMENT.md` | Oui (limité) |
 
-Railway est recommandé car il gère Prisma automatiquement sans configuration spéciale.
+Fly.io est recommandé : plan gratuit permanent, Docker natif, Prisma sans configuration spéciale.
