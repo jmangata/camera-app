@@ -20,7 +20,7 @@ router.post('/register', async (req, res) => {
     });
 
     if (existingUser) {
-      return res.status(400).json({ error: 'Email ou username déjà utilisé' });
+      return res.status(400).json({ error: 'Email or username already used' });
     }
 
     const user = await AuthService.createUser(data);
@@ -32,7 +32,7 @@ router.post('/register', async (req, res) => {
 
     res.status(201).json({ user, token });
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ error: error.message || 'Registration failed' });
   }
 });
 
@@ -42,7 +42,7 @@ router.post('/login', async (req, res) => {
     const result = await AuthService.authenticateUser(data.email, data.password);
     res.json(result);
   } catch (error: any) {
-    res.status(401).json({ error: error.message });
+    res.status(401).json({ error: error.message || 'Login failed' });
   }
 });
 
@@ -60,12 +60,12 @@ router.get('/me', authenticateToken, async (req: any, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+      return res.status(404).json({ error: 'User not found' });
     }
 
     res.json(user);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message || 'Server error' });
   }
 });
 

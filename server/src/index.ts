@@ -23,7 +23,7 @@ const io = new Server(server, {
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
-  message: 'Trop de requêtes, veuillez réessayer plus tard'
+  message: 'Too many requests, please try again later'
 });
 
 app.use(helmet());
@@ -46,7 +46,7 @@ app.get('/api/health', (req, res) => {
 });
 
 io.on('connection', (socket) => {
-  console.log('Client connecté:', socket.id);
+  console.log('Client connected:', socket.id);
   
   socket.on('join-camera', (cameraId) => {
     socket.join(`camera-${cameraId}`);
@@ -57,14 +57,14 @@ io.on('connection', (socket) => {
   });
   
   socket.on('disconnect', () => {
-    console.log('Client déconnecté:', socket.id);
+    console.log('Client disconnected:', socket.id);
   });
 });
 
 const PORT = process.env.PORT || 3001;
 
 server.listen(PORT, () => {
-  console.log(`Serveur démarré sur le port ${PORT}`);
+  console.log(`Server started on port ${PORT}`);
 });
 
 export { io };
