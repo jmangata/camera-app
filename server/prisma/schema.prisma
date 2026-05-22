@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cameras   Camera[]
+  reports   Report[]
+  comments  Comment[]
+  favorites Favorite[]
+
+  @@map("users")
+}
+
+model Category {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String?
+  icon        String?
+  color       String?
+
+  cameras Camera[]
+
+  @@map("categories")
+}
+
+model Camera {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  latitude    Float
+  longitude   Float
+  imageUrl    String?
+  streamUrl   String
+  source      String
+  status      CameraStatus @default(ACTIVE)
+  categoryId  String
+  addedBy     String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  category   Category  @relation(fields: [categoryId], references: [id])
+  addedByUser User      @relation(fields: [addedBy], references: [id])
+  reports    Report[]
+  comments   Comment[]
+  favorites  Favorite[]
+
+  @@map("cameras")
+}
+
+model Report {
+  id        String     @id @default(cuid())
+  reason    String
+  cameraId  String
+  userId    String
+  status    ReportStatus @default(PENDING)
+  createdAt DateTime   @default(now())
+
+  camera Camera @relation(fields: [cameraId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("reports")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  cameraId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  camera Camera @relation(fields: [cameraId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("comments")
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  cameraId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  camera Camera @relation(fields: [cameraId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([cameraId, userId])
+  @@map("favorites")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String
+  userId    String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum CameraStatus {
+  ACTIVE
+  OFFLINE
+  PENDING
+  REPORTED
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
