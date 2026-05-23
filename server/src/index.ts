@@ -10,26 +10,29 @@ import cameraRoutes from './routes/cameras';
 import categoryRoutes from './routes/categories';
 import reportRoutes from './routes/reports';
 import adminRoutes from './routes/admin';
+import commentRoutes from './routes/comments';
+import favoriteRoutes from './routes/favorites';
 
 const app = express();
 const server = createServer(app);
-const io = new Server(server, {
+
+export const io = new Server(server, {
   cors: {
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST']
-  }
+    methods: ['GET', 'POST'],
+  },
 });
 
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
-  message: 'Too many requests, please try again later'
+  message: 'Too many requests, please try again later',
 });
 
 app.use(helmet());
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
+  credentials: true,
 }));
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
@@ -40,31 +43,34 @@ app.use('/api/cameras', cameraRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api', commentRoutes);
+app.use('/api', favoriteRoutes);
 
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (_req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
-  
-  socket.on('join-camera', (cameraId) => {
+
+  socket.on('join-camera', (cameraId: string) => {
     socket.join(`camera-${cameraId}`);
   });
-  
-  socket.on('leave-camera', (cameraId) => {
+
+  socket.on('leave-camera', (cameraId: string) => {
     socket.leave(`camera-${cameraId}`);
   });
-  
+
+  socket.on('new-camera', (camera: any) => {
+    io.emit('camera-added', camera);
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });
 });
 
 const PORT = process.env.PORT || 3001;
-
 server.listen(PORT, () => {
   console.log(`Server started on port ${PORT}`);
 });
-
-export { io };

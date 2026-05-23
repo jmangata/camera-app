@@ -4,41 +4,6 @@ import { prisma } from '../lib/prisma';
 
 const router = Router();
 
-router.get('/stats', authenticateToken, requireRole(['ADMIN']), async (req: Request, res: Response) => {
-  try {
-    const [totalCameras, activeCameras, totalUsers, totalReports, pendingReports, totalCategories] =
-      await Promise.all([
-        prisma.camera.count(),
-        prisma.camera.count({ where: { status: 'ACTIVE' } }),
-        prisma.user.count(),
-        prisma.report.count(),
-        prisma.report.count({ where: { status: 'PENDING' } }),
-        prisma.category.count(),
-      ]);
-
-    const recentCameras = await prisma.camera.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        category: true,
-        addedByUser: { select: { username: true } },
-      },
-    });
-
-    const camerasByCategory = await prisma.category.findMany({
-      include: { _count: { select: { cameras: true } } },
-    });
-
-    res.json({
-      overview: { totalCameras, activeCameras, totalUsers, totalReports, pendingReports, totalCategories },
-      recentCameras,
-      camerasByCategory,
-    });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 router.get('/users', authenticateToken, requireRole(['ADMIN']), async (req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany({
@@ -72,6 +37,86 @@ router.put('/users/:id/role', authenticateToken, requireRole(['ADMIN']), async (
     res.json(user);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
+  }
+});
+
+// GET pending cameras for moderation
+router.get('/cameras/pending', authenticateToken, requireRole(['MODERATOR', 'ADMIN']), async (req: Request, res: Response) => {
+  try {
+    const cameras = await prisma.camera.findMany({
+      where: { status: 'PENDING' },
+      include: {
+        category: true,
+        addedByUser: { select: { username: true, email: true } },
+        _count: { select: { reports: true, comments: true, favorites: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(cameras);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PATCH camera status
+router.patch('/cameras/:id/status', authenticateToken, requireRole(['MODERATOR', 'ADMIN']), async (req: Request, res: Response) => {
+  try {
+    const { status } = req.body;
+    const camera = await prisma.camera.update({
+      where: { id: req.params.id },
+      data: { status },
+      include: { category: true, addedByUser: { select: { username: true } } },
+    });
+    res.json(camera);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// DELETE camera (admin)
+router.delete('/cameras/:id', authenticateToken, requireRole(['ADMIN']), async (req: Request, res: Response) => {
+  try {
+    await prisma.camera.delete({ where: { id: req.params.id } });
+    res.status(204).send();
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Stats accessible to MODERATOR too
+router.get('/stats', authenticateToken, requireRole(['MODERATOR', 'ADMIN']), async (req: Request, res: Response) => {
+  try {
+    const [totalCameras, activeCameras, totalUsers, totalReports, pendingReports, totalCategories, pendingCameras] =
+      await Promise.all([
+        prisma.camera.count(),
+        prisma.camera.count({ where: { status: 'ACTIVE' } }),
+        prisma.user.count(),
+        prisma.report.count(),
+        prisma.report.count({ where: { status: 'PENDING' } }),
+        prisma.category.count(),
+        prisma.camera.count({ where: { status: 'PENDING' } }),
+      ]);
+
+    const recentCameras = await prisma.camera.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        category: true,
+        addedByUser: { select: { username: true } },
+      },
+    });
+
+    const camerasByCategory = await prisma.category.findMany({
+      include: { _count: { select: { cameras: true } } },
+    });
+
+    res.json({
+      overview: { totalCameras, activeCameras, totalUsers, totalReports, pendingReports, totalCategories, pendingCameras },
+      recentCameras,
+      camerasByCategory,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 

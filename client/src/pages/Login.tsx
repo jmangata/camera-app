@@ -1,100 +1,111 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
+import { CameraIcon, EnvelopeIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 import { authAPI } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
-
     try {
-      const response = await authAPI.login(formData.email, formData.password);
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      const res = await authAPI.login(email, password);
+      login(res.data.token, res.data.user);
+      toast.success('Connexion réussie !');
       navigate('/');
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Erreur de connexion');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Identifiants incorrects');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg flex items-center justify-center px-4">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full"
-      >
-        <div className="card">
-          <h2 className="text-3xl font-bold text-white text-center mb-8">
-            Connexion
-          </h2>
-
-          {error && (
-            <div className="mb-4 p-3 bg-red-600 text-white rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-3 py-2 bg-dark-bg border border-dark-border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="votre@email.com"
-              />
+    <>
+      <Helmet>
+        <title>Connexion - CamMap Fort-de-France</title>
+      </Helmet>
+      <div className="min-h-[calc(100vh-4rem)] bg-dark-bg flex items-center justify-center px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md"
+        >
+          <div className="card">
+            <div className="flex flex-col items-center mb-8">
+              <div className="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center mb-4">
+                <CameraIcon className="w-7 h-7 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-white">Connexion</h1>
+              <p className="text-gray-400 text-sm mt-1">Accédez à votre compte CamMap</p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Mot de passe
-              </label>
-              <input
-                type="password"
-                required
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-3 py-2 bg-dark-bg border border-dark-border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="••••••••"
-              />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                <div className="relative">
+                  <EnvelopeIcon className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
+                    placeholder="votre@email.com"
+                    className="w-full pl-10 pr-4 py-2.5 bg-dark-bg border border-dark-border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Mot de passe</label>
+                <div className="relative">
+                  <LockClosedIcon className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    required
+                    placeholder="••••••••"
+                    className="w-full pl-10 pr-4 py-2.5 bg-dark-bg border border-dark-border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Connexion...' : 'Se connecter'}
+              </button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-gray-400 text-sm">
+                Pas encore de compte ?{' '}
+                <Link to="/register" className="text-primary-400 hover:text-primary-300 font-medium">
+                  S'inscrire
+                </Link>
+              </p>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Connexion...' : 'Se connecter'}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-gray-400">
-              Pas encore de compte?{' '}
-              <Link to="/register" className="text-primary-400 hover:text-primary-300">
-                S'inscrire
-              </Link>
-            </p>
+            <div className="mt-4 p-3 bg-gray-800 rounded-lg">
+              <p className="text-xs text-gray-400 font-medium mb-1">Comptes de démo :</p>
+              <p className="text-xs text-gray-500">Admin: admin@cammap.com / admin123</p>
+              <p className="text-xs text-gray-500">User: user@cammap.com / user123</p>
+            </div>
           </div>
-        </div>
-      </motion.div>
-    </div>
+        </motion.div>
+      </div>
+    </>
   );
 }
