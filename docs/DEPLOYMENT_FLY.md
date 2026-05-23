@@ -92,7 +92,7 @@ Cela injecte automatiquement `DATABASE_URL` dans les secrets de l'app.
 fly secrets set \
   JWT_SECRET="un_secret_long_et_securise_minimum_32_caracteres" \
   JWT_EXPIRES_IN="7d" \
-  FRONTEND_URL="https://cammap-frontend.fly.dev" \
+  FRONTEND_URL="https://cammap-frontend.fly.dev" \cd
   RATE_LIMIT_WINDOW_MS="900000" \
   RATE_LIMIT_MAX_REQUESTS="100" \
   --app cammap-backend
