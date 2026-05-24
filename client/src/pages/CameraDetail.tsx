@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 import { camerasAPI, commentsAPI, favoritesAPI, reportsAPI } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { io } from 'socket.io-client';
+import StreamPlayer from '../components/StreamPlayer';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3001';
 
@@ -181,13 +182,28 @@ export default function CameraDetail() {
           </button>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+            {/* Stream player */}
+            <div className="card p-4">
+              <h2 className="text-sm font-semibold text-gray-400 uppercase mb-3 flex items-center space-x-2">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse inline-block" />
+                <span>Flux en direct</span>
+              </h2>
+              <StreamPlayer
+                streamUrl={camera.streamUrl || ''}
+                name={camera.name}
+                latitude={camera.latitude}
+                longitude={camera.longitude}
+                category={camera.category.name}
+              />
+            </div>
+
             {/* Header card */}
             <div className="card overflow-hidden">
               {camera.imageUrl && (
                 <img
                   src={camera.imageUrl}
                   alt={camera.name}
-                  className="w-full h-64 object-cover"
+                  className="w-full h-48 object-cover"
                 />
               )}
               <div className="p-6">
@@ -272,9 +288,10 @@ export default function CameraDetail() {
                       href={camera.streamUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary-400 hover:text-primary-300"
+                      className="flex items-center space-x-1 text-sm text-primary-400 hover:text-primary-300"
                     >
-                      Voir le flux →
+                      <span>Source officielle</span>
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                     </a>
                   )}
                 </div>
