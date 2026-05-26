@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
+import { roleSchema, cameraStatusSchema } from '../validators/auth';
 
 const router = Router();
 
@@ -26,7 +27,7 @@ router.get('/users', authenticateToken, requireRole(['ADMIN']), async (req: Requ
 
 router.put('/users/:id/role', authenticateToken, requireRole(['ADMIN']), async (req: Request, res: Response) => {
   try {
-    const { role } = req.body;
+    const role = roleSchema.parse(req.body.role);
 
     const user = await prisma.user.update({
       where: { id: req.params.id },
@@ -61,7 +62,7 @@ router.get('/cameras/pending', authenticateToken, requireRole(['MODERATOR', 'ADM
 // PATCH camera status
 router.patch('/cameras/:id/status', authenticateToken, requireRole(['MODERATOR', 'ADMIN']), async (req: Request, res: Response) => {
   try {
-    const { status } = req.body;
+    const status = cameraStatusSchema.parse(req.body.status);
     const camera = await prisma.camera.update({
       where: { id: req.params.id },
       data: { status },

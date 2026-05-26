@@ -5,9 +5,9 @@ services:
     image: postgres:15
     container_name: cammap-postgres
     environment:
-      POSTGRES_DB: cammap_fdf
-      POSTGRES_USER: cammap_user
-      POSTGRES_PASSWORD: cammap_password
+      POSTGRES_DB: ${POSTGRES_DB:-cammap_fdf}
+      POSTGRES_USER: ${POSTGRES_USER:-cammap_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     ports:
       - "5432:5432"
     volumes:
@@ -21,12 +21,12 @@ services:
       dockerfile: Dockerfile
     container_name: cammap-backend
     environment:
-      DATABASE_URL: postgresql://cammap_user:cammap_password@postgres:5432/cammap_fdf?schema=public
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production
-      JWT_EXPIRES_IN: 7d
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cammap_user}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-cammap_fdf}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       PORT: 3001
       NODE_ENV: production
-      FRONTEND_URL: http://localhost:3000
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
     ports:
       - "3001:3001"
     depends_on:

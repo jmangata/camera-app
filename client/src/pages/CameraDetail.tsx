@@ -58,7 +58,9 @@ export default function CameraDetail() {
     fetchCamera();
 
     // Socket.io real-time comments
-    socketRef.current = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    socketRef.current = io(SOCKET_URL, { transports: ['websocket', 'polling'], auth: { token } });
     socketRef.current.emit('join-camera', id);
     socketRef.current.on('new-comment', (comment: Comment) => {
       setComments(prev => [comment, ...prev]);
