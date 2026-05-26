@@ -4,8 +4,13 @@ export const registerSchema = z.object({
   email: z.string().email('Email invalide'),
   username: z.string().min(3, 'Username requis (min 3 caractères)'),
   password: z.string().min(6, 'Mot de passe requis (min 6 caractères)'),
-  role: z.enum(['USER', 'MODERATOR', 'ADMIN']).optional(),
 });
+
+export const roleSchema = z.enum(['USER', 'MODERATOR', 'ADMIN']);
+
+export const cameraStatusSchema = z.enum(['ACTIVE', 'OFFLINE', 'PENDING', 'REPORTED']);
+
+export const reportStatusSchema = z.enum(['PENDING', 'RESOLVED', 'DISMISSED']);
 
 export const loginSchema = z.object({
   email: z.string().email('Email invalide'),

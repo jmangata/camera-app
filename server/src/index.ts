@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
+import { AuthService } from './lib/auth';
 import authRoutes from './routes/auth';
 import cameraRoutes from './routes/cameras';
 import categoryRoutes from './routes/categories';
@@ -12,6 +13,11 @@ import reportRoutes from './routes/reports';
 import adminRoutes from './routes/admin';
 import commentRoutes from './routes/comments';
 import favoriteRoutes from './routes/favorites';
+
+if (!process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is not set. Exiting.');
+  process.exit(1);
+}
 
 const app = express();
 const server = createServer(app);
@@ -35,7 +41,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(limiter);
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/auth', authRoutes);
@@ -50,23 +56,36 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  const message = process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message;
+  res.status(500).json({ error: message });
+});
 
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (!token) {
+    return next(new Error('Authentication required'));
+  }
+  try {
+    const user = AuthService.verifyToken(token);
+    socket.data.user = user;
+    next();
+  } catch {
+    next(new Error('Invalid token'));
+  }
+});
+
+io.on('connection', (socket) => {
   socket.on('join-camera', (cameraId: string) => {
-    socket.join(`camera-${cameraId}`);
+    if (typeof cameraId === 'string' && cameraId.length > 0 && cameraId.length < 100) {
+      socket.join(`camera-${cameraId}`);
+    }
   });
 
   socket.on('leave-camera', (cameraId: string) => {
-    socket.leave(`camera-${cameraId}`);
-  });
-
-  socket.on('new-camera', (camera: any) => {
-    io.emit('camera-added', camera);
-  });
-
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+    if (typeof cameraId === 'string' && cameraId.length > 0 && cameraId.length < 100) {
+      socket.leave(`camera-${cameraId}`);
+    }
   });
 });
 

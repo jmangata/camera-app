@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { authenticateToken, AuthRequest, requireRole } from '../middleware/auth';
-import { reportSchema } from '../validators/auth';
+import { reportSchema, reportStatusSchema } from '../validators/auth';
 import { prisma } from '../lib/prisma';
 
 const router = Router();
@@ -60,7 +60,7 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
 
 router.put('/:id/status', authenticateToken, requireRole(['MODERATOR', 'ADMIN']), async (req: AuthRequest, res: Response) => {
   try {
-    const { status } = req.body;
+    const status = reportStatusSchema.parse(req.body.status);
 
     const report = await prisma.report.update({
       where: { id: req.params.id },

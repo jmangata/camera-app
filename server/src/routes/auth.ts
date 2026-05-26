@@ -23,11 +23,10 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Email or username already used' });
     }
 
-    const user = await AuthService.createUser(data as {
-      email: string;
-      username: string;
-      password: string;
-      role?: 'USER' | 'MODERATOR' | 'ADMIN';
+    const user = await AuthService.createUser({
+      email: data.email,
+      username: data.username,
+      password: data.password,
     });
     const token = AuthService.generateToken({
       userId: user.id,

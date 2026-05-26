@@ -94,6 +94,15 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
 
 router.put('/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
+    const existing = await prisma.camera.findUnique({ where: { id: req.params.id } });
+    if (!existing) return res.status(404).json({ error: 'Camera not found' });
+
+    const isOwner = existing.addedBy === req.user!.userId;
+    const isPrivileged = req.user!.role === 'ADMIN' || req.user!.role === 'MODERATOR';
+    if (!isOwner && !isPrivileged) {
+      return res.status(403).json({ error: 'Not authorized to update this camera' });
+    }
+
     const data = cameraSchema.parse(req.body);
 
     const camera = await prisma.camera.update({
@@ -120,8 +129,17 @@ router.put('/:id', authenticateToken, async (req: AuthRequest, res: Response) =>
   }
 });
 
-router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
+router.delete('/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
+    const existing = await prisma.camera.findUnique({ where: { id: req.params.id } });
+    if (!existing) return res.status(404).json({ error: 'Camera not found' });
+
+    const isOwner = existing.addedBy === req.user!.userId;
+    const isAdmin = req.user!.role === 'ADMIN';
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ error: 'Not authorized to delete this camera' });
+    }
+
     await prisma.camera.delete({ where: { id: req.params.id } });
     res.status(204).send();
   } catch (error: any) {
